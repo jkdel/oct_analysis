@@ -407,19 +407,21 @@ permissions and limitations under the License.
 
 # References
 
-<div id="ref-Delarocque2023" class="csl-entry">
-Delarocque, Julien. 2023. <span>“Jkdel/Oct_analysis: Initial Release of
+<ul>
+<li id="ref-Delarocque2023">
+Delarocque, Julien. 2023. <span>“jkdel/oct_analysis: Initial Release of
 an Example Analysis of OCT Data.”</span> Zenodo. <a href="https://doi.org/10.5281/ZENODO.7590147">https://doi.org/10.5281/ZENODO.7590147</a>.
-</div>
+</li>
 
-<div id="ref-Gersch2022" class="csl-entry">
+<li id="ref-Gersch2022">
 Gersch, Julia, Katerina Hufendiek, Julien Delarocque, Carsten Framme, Christina Jacobsen,
 Heidi Stöhr, Ulrich Kellner, and Karsten Hufendiek. 2022. <span>“Investigation of
 Structural Alterations in Inherited Retinal Diseases: A Quantitative SD-OCT-Analysis of
 Retinal Layer Thicknesses in Light of Underlying Genetic Mutations.”</span>
 <em>International Journal of Molecular Sciences</em> 23 (24): 16007.
 <a href="https://doi.org/10.3390/ijms232416007">https://doi.org/10.3390/ijms232416007</a>.
-</div>
+</li>
+</ul>
 
 # Session information
 
