@@ -224,7 +224,7 @@ pvals_by_layer <- function(dat) {
               color="red", fontface="bold", size=6) +
     facet_wrap(.~layer, ncol = 4,
                labeller = as_labeller(\(x) sub("LEGEND","",sub("_","/",x)))) +
-    viridis::scale_fill_viridis(na.value="white", limits=c(-148,33), labels=signs::signs_format()) +
+    viridis::scale_fill_viridis(na.value="white", limits=c(-155,32), labels=signs::signs_format()) +
     theme_void() +
     coord_fixed() +
     guides(fill=guide_colorbar(title="Mean difference in thickness to control (µm)",

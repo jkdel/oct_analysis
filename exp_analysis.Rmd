@@ -1,19 +1,17 @@
 ---
-title: "Statistical analysis for \"Investigation of Structural Alterations in Inherited
-  Retinal Diseases: A Quantitative SD-OCT-Analysis of Retinal Layer Thicknesses in Light
-  of Underlying Genetic Mutations\""
+title: "Statistical analysis of OCT data"
+subtitle: "Investigation of Structural Alterations in Inherited Retinal Diseases: A Quantitative SD-OCT-Analysis of Retinal Layer Thicknesses in Light of Underlying Genetic Mutations"
 author: "Julien Delarocque"
 date: "2023-01-31"
 bibliography: sa_oct.bib
 link-citations: true
 output:
   html_document:
-    toc: true
-    toc_float: true
+    toc: false
     number_sections: true
     fig_caption: true
-    theme: simplex
-    css: cstyle.css
+    theme: cerulean
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -127,7 +125,7 @@ euc_posthoc %>% knitr::kable(caption = "Dunnett pairwise comparisons among group
 
 ## Retinitis pigmentosa
 
-```{r match_rp, cache=TRUE, fig.asp=20.5/16, fig.cap="**Mean difference in thickness between RP and controls by layer and segment.** Significant differences are denoted with a star (*)."}
+```{r match_rp, cache=TRUE, fig.asp=0.92, fig.cap="**Mean difference in thickness between RP and controls by layer and segment.** Significant differences are denoted with a star (*)."}
 datl <- dat %>%
   pivot_longer(C0:T2, names_to = "segment", values_to = "thickness")
 
@@ -173,7 +171,7 @@ pvals_by_layer(rp_uni_comp)
 
 ## Cone-rods dystrophie
 
-```{r match_crd, cache=TRUE, fig.asp=20.5/16, fig.cap="**Mean difference in thickness between CRD and controls by layer and segment.** Significant differences are denoted with a star (*)."}
+```{r match_crd, cache=TRUE, fig.asp=0.92, fig.cap="**Mean difference in thickness between CRD and controls by layer and segment.** Significant differences are denoted with a star (*)."}
 matched_crd <- dat %>%
   filter(disease %in% c("NON","CRD")) %>%
   select(pat_ID, disease, age, sex) %>%
@@ -212,7 +210,7 @@ pvals_by_layer(crd_uni_comp)
 
 ## Morbus Stargard
 
-```{r match_stgd, cache=TRUE, fig.asp=20.5/16, fig.cap="**Mean difference in thickness between STGD and controls by layer and segment.** Significant differences are denoted with a star (*)."}
+```{r match_stgd, cache=TRUE, fig.asp=0.92, fig.cap="**Mean difference in thickness between STGD and controls by layer and segment.** Significant differences are denoted with a star (*)."}
 matched_stgd <- dat %>%
   filter(disease %in% c("NON","STGD")) %>%
   select(pat_ID, disease, age, sex) %>%
