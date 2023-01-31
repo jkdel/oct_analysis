@@ -14,6 +14,8 @@ output:
     keep_md: true
 ---
 
+[![DOI](https://zenodo.org/badge/595621353.svg)](https://zenodo.org/badge/latestdoi/595621353)
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = F, warning = F, message = F)
 ```
@@ -27,7 +29,7 @@ While the general rationale of the analysis was validated by peer-review, please
 that the script itself was not reviewed. The script is provided under an
 [Apache license 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
-Please cite as [].
+Please cite as [@Delarocque2023].
 
 # Dataset
 
@@ -249,7 +251,7 @@ pvals_by_layer(stgd_uni_comp)
 
 # Association between subfield thicknesses and visual function
 
-```{r vis_overview}
+```{r vis_overview, cache=TRUE}
 vis_dat <- datl %>%
   filter(!is.na(logMAR)) %>%
   select(pat_ID, logMAR, age, sex, disease) %>%

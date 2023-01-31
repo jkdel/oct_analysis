@@ -1,20 +1,20 @@
+[![DOI](https://zenodo.org/badge/595621353.svg)](https://zenodo.org/badge/latestdoi/595621353)
+
 # Summary
 
-This script reproduces the essential parts of the analysis presented in [@Gersch2022] on a
-mock data set. Consequently, **the results are purely random!**
+This script reproduces the essential parts of the analysis presented in <span class="citation">(<a href="#ref-Gersch2022" role="doc-biblioref">Gersch et al. 2022</a>)</span> on a mock data set. Consequently, **the results are purely random!**
 
 While the general rationale of the analysis was validated by peer-review, please note
 that the script itself was not reviewed. The script is provided under an
 [Apache license 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
-Please cite as [].
+Please cite as <span class="citation">(<a href="#ref-Delarocque2023" role="doc-biblioref">Delarocque 2023</a>)</span>.
 
 # Dataset
 
 The here provided data set was randomly generated based on the case numbers, means and
 standard deviations by disease entity, layer and segment in the original paper. For
-details about layer and segment definition please see [@Gersch2022].
-
+details about layer and segment definition please see <span class="citation">(<a href="#ref-Gersch2022" role="doc-biblioref">Gersch et al. 2022</a>)</span>.
 
 
 # Interocular symmetry
@@ -406,6 +406,11 @@ either express or implied. See the License for the specific language governing
 permissions and limitations under the License.
 
 # References
+
+<div id="ref-Delarocque2023" class="csl-entry">
+Delarocque, Julien. 2023. <span>“Jkdel/Oct_analysis: Initial Release of
+an Example Analysis of OCT Data.”</span> Zenodo. <a href="https://doi.org/10.5281/ZENODO.7590147">https://doi.org/10.5281/ZENODO.7590147</a>.
+</div>
 
 <div id="ref-Gersch2022" class="csl-entry">
 Gersch, Julia, Katerina Hufendiek, Julien Delarocque, Carsten Framme, Christina Jacobsen,
