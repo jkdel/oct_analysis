@@ -1,21 +1,3 @@
----
-title: "Statistical analysis of OCT data"
-subtitle: "Investigation of Structural Alterations in Inherited Retinal Diseases: A Quantitative SD-OCT-Analysis of Retinal Layer Thicknesses in Light of Underlying Genetic Mutations"
-author: "Julien Delarocque"
-date: "2023-01-31"
-bibliography: sa_oct.bib
-link-citations: true
-output:
-  html_document:
-    toc: false
-    number_sections: true
-    fig_caption: true
-    theme: cerulean
-    keep_md: true
----
-
-
-
 # Summary
 
 This script reproduces the essential parts of the analysis presented in [@Gersch2022] on a
@@ -65,7 +47,6 @@ Table: Dunnett pairwise comparisons among groups. The different group sizes shou
 ## Retinitis pigmentosa
 
 
-```{=html}
 <div class="Rtable1"><table class="Rtable1">
 <thead>
 <tr>
@@ -108,7 +89,6 @@ Table: Dunnett pairwise comparisons among groups. The different group sizes shou
 </tbody>
 </table>
 </div>
-```
 
 
 Table: Top 20 most significantly different segment thicknesses.
@@ -141,7 +121,6 @@ Table: Top 20 most significantly different segment thicknesses.
 ## Cone-rods dystrophie
 
 
-```{=html}
 <div class="Rtable1"><table class="Rtable1">
 <thead>
 <tr>
@@ -184,7 +163,6 @@ Table: Top 20 most significantly different segment thicknesses.
 </tbody>
 </table>
 </div>
-```
 
 
 Table: Top 20 most significantly different segment thicknesses.
@@ -217,7 +195,6 @@ Table: Top 20 most significantly different segment thicknesses.
 ## Morbus Stargard
 
 
-```{=html}
 <div class="Rtable1"><table class="Rtable1">
 <thead>
 <tr>
@@ -260,7 +237,6 @@ Table: Top 20 most significantly different segment thicknesses.
 </tbody>
 </table>
 </div>
-```
 
 
 Table: Top 20 most significantly different segment thicknesses.
@@ -293,7 +269,6 @@ Table: Top 20 most significantly different segment thicknesses.
 # Association between subfield thicknesses and visual function
 
 
-```{=html}
 <div class="Rtable1"><table class="Rtable1">
 <thead>
 <tr>
@@ -371,7 +346,6 @@ Table: Top 20 most significantly different segment thicknesses.
 </tbody>
 </table>
 </div>
-```
 
 ```
 ## 
@@ -433,8 +407,14 @@ permissions and limitations under the License.
 
 # References
 
-::: {#refs}
-:::
+<div id="ref-Gersch2022" class="csl-entry">
+Gersch, Julia, Katerina Hufendiek, Julien Delarocque, Carsten Framme, Christina Jacobsen,
+Heidi Stöhr, Ulrich Kellner, and Karsten Hufendiek. 2022. <span>“Investigation of
+Structural Alterations in Inherited Retinal Diseases: A Quantitative SD-OCT-Analysis of
+Retinal Layer Thicknesses in Light of Underlying Genetic Mutations.”</span>
+<em>International Journal of Molecular Sciences</em> 23 (24): 16007.
+<a href="https://doi.org/10.3390/ijms232416007">https://doi.org/10.3390/ijms232416007</a>.
+</div>
 
 # Session information
 
