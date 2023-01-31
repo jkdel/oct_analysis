@@ -1,0 +1,349 @@
+---
+title: "Statistical analysis for \"Investigation of Structural Alterations in Inherited
+  Retinal Diseases: A Quantitative SD-OCT-Analysis of Retinal Layer Thicknesses in Light
+  of Underlying Genetic Mutations\""
+author: "Julien Delarocque"
+date: "2023-01-31"
+bibliography: sa_oct.bib
+link-citations: true
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    fig_caption: true
+    theme: simplex
+    css: cstyle.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, message = F)
+```
+
+# Summary
+
+This script reproduces the essential parts of the analysis presented in [@Gersch2022] on a
+mock data set. Consequently, **the results are purely random!**
+
+While the general rationale of the analysis was validated by peer-review, please note
+that the script itself was not reviewed. The script is provided under an
+[Apache license 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+Please cite as [].
+
+# Dataset
+
+The here provided data set was randomly generated based on the case numbers, means and
+standard deviations by disease entity, layer and segment in the original paper. For
+details about layer and segment definition please see [@Gersch2022].
+
+```{r data_import}
+library(tidyverse)
+
+dat <- openxlsx::read.xlsx("sim_OCT_data.xlsx") %>%
+  mutate(pat_ID = factor(pat_ID),
+         sex = factor(sex),
+         disease = factor(disease, levels = c("NON", "RP", "STGD", "CRD")),
+         eye = factor(eye),
+         layer = factor(layer, levels = c("RNFL", "GCL", "IPL", "INL", "OPL", "ONL",
+                                          "PR1_2", "RPE", "IRL", "ORL", "Retina")))
+```
+
+# Interocular symmetry
+
+Multivariate assessment of interocular symmetry by PCA and euclidean distance.
+
+```{r lat_pca}
+# The wide data frame will be used for the multivariate analysis
+datw <- dat %>%
+  # The following layers summarize other layers, thus need to be removed to avoid
+  # cumulative effects of certain layers
+  filter(! layer %in% c("Retina","IRL", "ORL")) %>%
+  pivot_wider(names_from=layer, values_from=C0:T2, names_glue = "{layer}_{.value}", names_sort = T)
+
+pca_data <- datw %>%
+  select(pat_ID, disease, eye, 7:78) %>%
+  unite("ID",pat_ID, eye) %>%
+  column_to_rownames("ID") %>%
+  mutate(across(where(is.numeric), scale))
+
+# Impute missing data for multivariate analysis only
+# (in the mock dataset no values are missing)
+# pca_data %>% Amelia::missmap()
+# pca_data[,-1] <- impute::impute.knn(as.matrix(pca_data[,-1]))$data
+
+source("utils.R")
+lat_p1 <- mpca(pca_data[,-1], group=pca_data[,1], scaling = F,
+               link=sub("_L|_R","",rownames(pca_data)), plot = F) +
+  scale_y_continuous(labels=signs::signs_format()) +
+  scale_x_continuous(labels=signs::signs_format())
+```
+
+```{r lat_dist, fig.asp=0.5, fig.cap="(A) Principal component analysis of the OCT data. Eye pairs a connected by a line.\n(B) Euclidean distance between eye pairs by group.", dpi=300}
+euc_data <- datw %>%
+  select(pat_ID, disease) %>%
+  distinct() %>%
+  left_join(pca_data %>%
+              select(-disease) %>%
+              rownames_to_column("rn") %>%
+              separate(rn, c("pat_ID", "eye"), sep = "_") %>%
+              finddists("pat_ID", "eye", scale=F) %>%
+              {data.frame(pat_ID = names(.), euclidean = ., row.names = NULL)})
+
+euc_n <- with(euc_data, table(disease))
+euc_m1 <- aov(euclidean~disease,euc_data)
+# car::leveneTest(euc_m1)
+# shapiro.test(resid(euc_m1))
+# car::qqPlot(resid(euc_m1))
+euc_posthoc <- emmeans::emmeans(euc_m1, dunnett~disease)$contrast %>% as.data.frame()
+
+library(ggpubr)
+lat_p2 <- euc_data %>%
+  ggplot(aes(disease, euclidean, color=disease)) +
+  ggforce::geom_sina(show.legend = F, method="density", seed=90793, maxwidth=1) +
+  # adjust to number of wished comparisons
+  geom_bracket(xmin="NON", xmax="RP", y.position=14.4, inherit.aes = F,label.size = 2,
+               label=sprintf("p = %.3f",euc_posthoc$p.value[euc_posthoc$contrast=="RP - NON"])) +
+  scale_x_discrete(labels=function(x) {sprintf("%s\n(n = %d)",x,euc_n[x])}) +
+  scale_y_continuous(expand=c(0.05,0.5)) +
+  labs(x=NULL, y="Euclidean distance between eyes")
+
+library(patchwork)
+lat_p1 + lat_p2 + plot_layout(guides = "collect") + plot_annotation(tag_levels = "A") &
+  ggthemes::scale_color_ptol("Group") &
+  theme_light(base_size = 8) &
+  theme(panel.grid = element_blank(), legend.position = "bottom", legend.margin = margin(t = -10))
+```
+
+```{r lat_dist_aov, results='asis'}
+report::report(anova(euc_m1))
+```
+
+```{r lat_dist_posthoc}
+euc_posthoc %>% knitr::kable(caption = "Dunnett pairwise comparisons among groups. The different group sizes should be accounted for in the interpretation.")
+```
+
+# Alterations of the retinal structure in IRDs
+
+## Retinitis pigmentosa
+
+```{r match_rp, cache=TRUE, fig.asp=20.5/16, fig.cap="**Mean difference in thickness between RP and controls by layer and segment.** Significant differences are denoted with a star (*)."}
+datl <- dat %>%
+  pivot_longer(C0:T2, names_to = "segment", values_to = "thickness")
+
+matched_rp <- dat %>%
+  filter(disease %in% c("NON","RP")) %>%
+  select(pat_ID, disease, age, sex) %>%
+  distinct() %>%
+  match_patients(id="pat_ID", treatment = "disease", control="NON", check = F) %>%
+  select(pat_ID, pair) %>%
+  left_join(datl) %>%
+  droplevels()
+
+library(table1)
+table1(~ age + sex | disease, overall = F,
+       data=matched_rp %>% select(pat_ID, age, sex, disease) %>% distinct())
+
+rp_uni_comp <- matched_rp %>%
+  group_by(layer, segment) %>%
+  nest() %>%
+  mutate(fit = map(data, ~nlme::gls(thickness ~ disease, data = .,
+                                    weights=nlme::varIdent(form = ~ 1 | disease),
+                                    correlation=nlme::corSymm(form = ~ 1 | pat_ID),
+                                    na.action = na.omit)),
+         tid = map(fit, parameters::parameters)) %>%
+  unnest(tid) %>%
+  ungroup() %>%
+  filter(Parameter=="diseaseRP") %>%
+  select(-Parameter) %>%
+  mutate(adj.p=p.adjust(p,method = "holm"),
+         sig.p=adj.p<.05) %>%
+  arrange(adj.p)
+# p values were computed using a Wald t-distribution approximation
+# table(sapply(rp_uni_comp$fit, \(x) shapiro.test(resid(x))$p.value)<0.05)
+# plot(rp_uni_comp$fit[[1]])
+
+rp_uni_comp %>%
+  select(layer, segment, Coefficient, SE, CI_low, CI_high, t, df_error, p, adj.p) %>%
+  head(20) %>%
+  knitr::kable(caption = "Top 20 most significantly different segment thicknesses.", digits = 3)
+
+pvals_by_layer(rp_uni_comp)
+```
+
+## Cone-rods dystrophie
+
+```{r match_crd, cache=TRUE, fig.asp=20.5/16, fig.cap="**Mean difference in thickness between CRD and controls by layer and segment.** Significant differences are denoted with a star (*)."}
+matched_crd <- dat %>%
+  filter(disease %in% c("NON","CRD")) %>%
+  select(pat_ID, disease, age, sex) %>%
+  distinct() %>%
+  match_patients(id="pat_ID", treatment = "disease", control="NON", check = F) %>%
+  select(pat_ID, pair) %>%
+  left_join(datl) %>%
+  droplevels()
+
+table1(~ age + sex | disease, overall = F,
+       data=matched_crd %>% select(pat_ID, age, sex, disease) %>% distinct())
+
+crd_uni_comp <- matched_crd %>%
+  group_by(layer, segment) %>%
+  nest() %>%
+  mutate(fit = map(data, ~nlme::gls(thickness ~ disease, data = .,
+                                    weights=nlme::varIdent(form = ~ 1 | disease),
+                                    correlation=nlme::corSymm(form = ~ 1 | pat_ID),
+                                    na.action = na.omit)),
+         tid = map(fit, parameters::parameters)) %>%
+  unnest(tid) %>%
+  ungroup() %>%
+  filter(Parameter=="diseaseCRD") %>%
+  select(-Parameter) %>%
+  mutate(adj.p=p.adjust(p,method = "holm"),
+         sig.p=adj.p<.05) %>%
+  arrange(adj.p)
+
+crd_uni_comp %>%
+  select(layer, segment, Coefficient, SE, CI_low, CI_high, t, df_error, p, adj.p) %>%
+  head(20) %>%
+  knitr::kable(caption = "Top 20 most significantly different segment thicknesses.", digits = 3)
+
+pvals_by_layer(crd_uni_comp)
+```
+
+## Morbus Stargard
+
+```{r match_stgd, cache=TRUE, fig.asp=20.5/16, fig.cap="**Mean difference in thickness between STGD and controls by layer and segment.** Significant differences are denoted with a star (*)."}
+matched_stgd <- dat %>%
+  filter(disease %in% c("NON","STGD")) %>%
+  select(pat_ID, disease, age, sex) %>%
+  distinct() %>%
+  match_patients(id="pat_ID", treatment = "disease", control="NON", check = F) %>%
+  select(pat_ID, pair) %>%
+  left_join(datl) %>%
+  droplevels()
+
+table1(~ age + sex | disease, overall = F,
+       data=matched_stgd %>% select(pat_ID, age, sex, disease) %>% distinct())
+
+stgd_uni_comp <- matched_stgd %>%
+  group_by(layer, segment) %>%
+  nest() %>%
+  mutate(fit = map(data, ~nlme::gls(thickness ~ disease, data = .,
+                                    weights=nlme::varIdent(form = ~ 1 | disease),
+                                    correlation=nlme::corSymm(form = ~ 1 | pat_ID),
+                                    na.action = na.omit)),
+         tid = map(fit, parameters::parameters)) %>%
+  unnest(tid) %>%
+  ungroup() %>%
+  filter(Parameter=="diseaseSTGD") %>%
+  select(-Parameter) %>%
+  mutate(adj.p=p.adjust(p,method = "holm"),
+         sig.p=adj.p<.05) %>%
+  arrange(adj.p)
+
+stgd_uni_comp %>%
+  select(layer, segment, Coefficient, SE, CI_low, CI_high, t, df_error, p, adj.p) %>%
+  head(20) %>%
+  knitr::kable(caption = "Top 20 most significantly different segment thicknesses.", digits = 3)
+
+pvals_by_layer(stgd_uni_comp)
+```
+
+# Association between subfield thicknesses and visual function
+
+```{r vis_overview}
+vis_dat <- datl %>%
+  filter(!is.na(logMAR)) %>%
+  select(pat_ID, logMAR, age, sex, disease) %>%
+  distinct()
+
+table1(~logMAR + age + sex | disease, overall = F, data=vis_dat)
+
+vis_n <- with(vis_dat, table(disease))
+(vis_m1 <- kruskal.test(vis_dat$logMAR, vis_dat$disease))
+vis_ph <- PMCMRplus::kwManyOneDunnTest(logMAR~disease,vis_dat) %>% summary()
+
+vis_dat %>%
+  ggplot(aes(disease, logMAR, color=disease)) +
+  ggforce::geom_sina(show.legend = F, method="density", seed=1362, maxwidth=.7) +
+  geom_bracket(xmin="NON", xmax="STGD", y.position=3.28, inherit.aes = F,label.size = 2,
+               label=sprintf("p = %.3f",vis_ph$p.value["STGD",])) +
+  geom_bracket(xmin="NON", xmax="CRD", y.position=3.5, inherit.aes = F,label.size = 2,
+             label=sprintf("p = %.3f",vis_ph$p.value["CRD",])) +
+  ggthemes::scale_color_ptol() +
+  labs(x=NULL, y="logMAR (higher values indicate worse vision)") +
+  scale_x_discrete(labels=function(x) {sprintf("%s\n(n = %d)",x,vis_n[x])}) +
+  theme_light(base_size = 8) +
+  theme(panel.grid = element_blank())
+```
+
+```{r cor_vis, cache=TRUE, fig.asp=.7, fig.cap="**Relationship between vision as logMAR and segment thicknesses within layers.** The regression line is obtained from a robust mixed model."}
+library(robustlmm)
+vis_uni_comp <- datl %>%
+  filter(!is.na(logMAR)) %>%
+  group_by(layer, segment) %>%
+  nest() %>%
+  mutate(fit = map(data, ~rlmer(logMAR ~ thickness + (1|pat_ID), data=.)),
+         tid = map(fit, parameters::parameters)) %>%
+  unnest(tid) %>%
+  ungroup() %>%
+  filter(Parameter=="thickness") %>%
+  mutate(adj.p=p.adjust(p,"holm"),
+         sig.p=adj.p<.05) %>%
+  arrange(adj.p)
+
+vis_uni_comp %>%
+  select(layer, segment, Coefficient, SE, CI_low, CI_high, t, p, adj.p) %>%
+  head(20) %>%
+  knitr::kable(caption = "Top 20 segments most significantly associated with logMAR.", digits = 3)
+
+vis_preds <- vis_uni_comp %>%
+  head(20) %>%
+  select(layer, segment, data, fit, adj.p) %>%
+  mutate(pred = map(fit, ~ggeffects::ggpredict(.)$thickness)) %>%
+  unnest(pred)
+
+vis_uni_comp %>%
+  head(20) %>%
+  select(layer, segment, data, fit, adj.p) %>%
+  unnest(data) %>%
+  ggplot(aes(thickness, logMAR, color=disease)) +
+  geom_point() +
+  geom_ribbon(data=vis_preds, mapping=aes(x=x, ymin=conf.low, ymax=conf.high),
+              inherit.aes = F, alpha=.2) +
+  geom_line(data=vis_preds, mapping=aes(x=x, y=predicted), inherit.aes = F) +
+  labs(x="Thickness (µm)") +
+  ggthemes::scale_color_ptol("Group") +
+  guides(color=guide_legend(nrow = 1, title.hjust = .5)) +
+  facet_wrap(~interaction(segment, layer), scales = "free",
+             labeller = as_labeller(\(x) {sub("_","/",sub("([A-Z][0-2])\\.(.+)","\\2 \\1",x))})) +
+  theme_light(base_size = 8) +
+  theme(panel.grid = element_blank(),
+        legend.position = "top",
+        legend.margin = margin(r=10, b = -4),
+        legend.direction = "horizontal")
+```
+
+# Licence
+
+Copyright 2023 Julien Delarocque
+ 
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+except in compliance with the License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+ 
+Unless required by applicable law or agreed to in writing, software distributed under the
+License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+either express or implied. See the License for the specific language governing
+permissions and limitations under the License.
+
+# References
+
+::: {#refs}
+:::
+
+# Session information
+
+```{r session_info, results='asis'}
+pander::pander(sessionInfo())
+```
